@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import sklearn
+import requests
+
 
 def cf_suggestions(movie_name, movies_pivot):
         movie_index = np.where(movies_pivot.index == movie_name)[0][0]
@@ -32,10 +34,10 @@ def cf_style(movies, genres):
 
     num_rows = 2
     for i in range(num_rows):
-        rec_columns(i, movies)
+        cf_columns(i, movies)
 
 
-def rec_columns(row_num, movies):
+def cf_columns(row_num, movies):
     columns = st.columns(5)
     for i in range(5):
         with columns[i]:
@@ -52,7 +54,7 @@ def get_scores(title, cb_movies, cosine_sim):
 
 
 def get_recommendations(cb_movies, scores):
-    budget, genres, homepage, overview = [], [], [], []
+    titles_id, budget, genres, homepage, overview = [], [], [], [], []
     production_companies, production_countries = [], []
     release_date, runtime, spoken_languages = [], [], []
     titles, vote_average, cast = [], [], []
@@ -60,6 +62,7 @@ def get_recommendations(cb_movies, scores):
     scores = sorted(scores, key=lambda x: x[1], reverse=True)
     for i in scores[0:11]:
         titles.append(cb_movies.iloc[i[0]]['title'])
+        titles_id.append(cb_movies.iloc[i[0]]['id'])
         genres.append(cb_movies.iloc[i[0]]['genres'])
         overview.append(cb_movies.iloc[i[0]]['overview'])
         budget.append(cb_movies.iloc[i[0]]['budget'])
@@ -72,12 +75,32 @@ def get_recommendations(cb_movies, scores):
         vote_average.append(cb_movies.iloc[i[0]]['vote_average'])
         cast.append(cb_movies.iloc[i[0]]['cast'])
 
-    return budget, genres, homepage, overview, production_companies, production_countries, release_date, runtime, spoken_languages, titles, vote_average, cast
+    return budget, genres, homepage, overview, production_companies, production_countries, release_date, runtime, spoken_languages, titles, vote_average, cast, titles_id
 
 
-def cb_style(budget, genres, homepage, overview, production_companies, production_countries, release_date, runtime, spoken_languages, titles, vote_average, cast):
+def get_image(title_id):
+    response = requests.get('https://api.themoviedb.org/3/movie/{}?api_key=393b66e59eb09a6adb154ec579586ae6&language=en-US'.format(title_id))
+    data = response.json()
+    error = {'success': False, 'status_code': 34, 'status_message': 'The resource you requested could not be found.'}
+    url = 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/2048px-No_image_available.svg.png'
+    if data != error:
+        url = 'http://image.tmdb.org/t/p/w500' + data['poster_path']
+    return url
+
+def cb_columns(row_num, titles_id, movies):
+    columns = st.columns(5)
+    for i in range(5):
+        with columns[i]:
+            indx = i+1+(5*row_num)
+            img = get_image(titles_id[indx])
+            st.image(img)
+            st.write(movies[indx])
+
+
+def cb_style(budget, genres, homepage, overview, production_companies, production_countries, release_date, runtime, spoken_languages, titles, vote_average, cast, titles_id):
     st.title(titles[0])
 
+    img = get_image(titles_id[0])
     st.image(img)
 
     st.subheader('Overview')
@@ -100,7 +123,9 @@ def cb_style(budget, genres, homepage, overview, production_companies, productio
 
     num_rows = 2
     for i in range(num_rows):
-        rec_columns(i, titles)
+        cb_columns(i, titles_id, titles)
+
+
 
 # MAIN PAGE
 st.header('Movie Recommendation System')
@@ -138,6 +163,6 @@ else:
 
     if button:
         scores = get_scores(select_movie, cb_movies, cosine_sim)
-        budget, genres, homepage, overview, production_companies, production_countries, release_date, runtime, spoken_languages, titles, vote_average, cast = get_recommendations(cb_movies, scores)
-        cb_style(budget, genres, homepage, overview, production_companies, production_countries, release_date, runtime, spoken_languages, titles, vote_average, cast)
+        budget, genres, homepage, overview, production_companies, production_countries, release_date, runtime, spoken_languages, titles, vote_average, cast, titles_id = get_recommendations(cb_movies, scores)
+        cb_style(budget, genres, homepage, overview, production_companies, production_countries, release_date, runtime, spoken_languages, titles, vote_average, cast, titles_id)
     
