@@ -30,9 +30,10 @@ It will seek similarities between two users and give recommendations based on pr
 - `Web app`
 
 ## Project overview
-![](files/project_overview1.png)
-![](files/project_overview2.png)
-![](files/project_overview3.png)
+![](files/overrrview1.png)
+![](files/overrrview2.png)
+![](files/overrrview3.png)
+![](files/overrrview4.png)
 
 ## How to Install and Run the Project
 
