@@ -5,46 +5,6 @@ import sklearn
 import requests
 
 
-def cf_suggestions(movie_name, movies_pivot):
-        movie_index = np.where(movies_pivot.index == movie_name)[0][0]
-        distances, suggestion = model.kneighbors(movies_pivot.iloc[movie_index, :].values.reshape(1,-1), n_neighbors=11)
-        return suggestion[0]
-
-
-def cf_recommendations(suggestions, movies_pivot, movies_df):
-    movies = []
-    genres = []
-
-    for movieId in suggestions:
-        movies.append(movies_pivot.index[movieId])
-
-    for movie in movies:
-        genre = movies_df[movies_df['title']==movie]['genres'].iloc[0]
-        genres.append(genre)
-
-    return movies, genres
-
-
-def cf_style(movies, genres):
-    st.title(movies[0])
-    st.subheader('Genre: ' + ', '.join(genres[0]))
-    st.image(img)
-    
-    st.subheader('Other recommendations:')
-
-    num_rows = 2
-    for i in range(num_rows):
-        cf_columns(i, movies)
-
-
-def cf_columns(row_num, movies):
-    columns = st.columns(5)
-    for i in range(5):
-        with columns[i]:
-            st.image(img)
-            st.write(movies[i+1+(5*row_num)])
-
-
 def get_scores(title, cb_movies, cosine_sim):
     title_id = np.where(cb_movies['title']==title)[0][0]
     scores = []
@@ -100,8 +60,8 @@ def cb_columns(row_num, titles_id, movies):
 def cb_style(budget, genres, homepage, overview, production_companies, production_countries, release_date, runtime, spoken_languages, titles, vote_average, cast, titles_id):
     st.title(titles[0])
 
-    img = get_image(titles_id[0])
-    st.image(img)
+    movie_img = get_image(titles_id[0])
+    st.image(movie_img)
 
     st.subheader('Overview')
     st.write(overview[0])
@@ -126,37 +86,71 @@ def cb_style(budget, genres, homepage, overview, production_companies, productio
         cb_columns(i, titles_id, titles)
 
 
+def get_similar_users():
+    # Remove picked user ID from the candidate list
+    user_similarity.drop(index=picked_userid, inplace=True)
+
+    user_sim_thresh = 0.2
+
+    # Get top 10 similar users
+    similar_users = user_similarity[user_similarity[picked_userid]>user_sim_thresh][picked_userid].sort_values(ascending=False)[:10]
+
+    return similar_users
+
+
+def filter_movies(similar_users):
+    # Movies that similar users watched. Remove movies that none of the similar users have watched
+    similar_user_movies = movie_norm[movie_norm.index.isin(similar_users.index)].dropna(axis=1, how='all')
+
+    # Movies that the target user has watched
+    picked_userid_watched = movie_norm[movie_norm.index==0].dropna(axis=1, how='all')
+
+    # Remove movies that target user watched
+    similar_user_movies.drop(columns=picked_userid_watched.columns, errors='ignore', inplace=True)
+
+    return similar_user_movies
+
+
+def get_recom_movies(similar_user_movies, movies_df):
+    # Get top 10 movies to recommend for target user
+    scores = similar_user_movies.mean(axis=0).sort_values(ascending=False)[:10]
+    rec_movies = scores.index.to_list()
+
+    genres = movies_df[movies_df['title'].isin(rec_movies)]['genres'].to_list()
+
+    return rec_movies, genres
+
+
+def cf_style(rec_movies, genres):
+    st.subheader('Recommendations:')
+
+    num_rows = 2
+    for i in range(num_rows):
+        cf_columns(i, rec_movies, genres)
+
+
+def cf_columns(row_num, rec_movies, genres):
+    columns = st.columns(5)
+    for i in range(5):
+        with columns[i]:
+            st.image(img)
+            st.write('Title: ', rec_movies[i+(5*row_num)]) 
+            st.write('Genres: ', genres[i+(5*row_num)])
+
 
 # MAIN PAGE
 st.header('Movie Recommendation System')
+
+img = 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/2048px-No_image_available.svg.png'
 
 colab_sys = st.radio('Choose Recommendation System',
                      ['Content Based Recommendation System', 
                       'Colaborative Filtering Recommendation System'])
 
 
-if colab_sys == 'Colaborative Filtering Recommendation System':
-
-    model = pd.read_pickle('files/model.pkl')
-    movies_df = pd.read_pickle('files/movies_df.pkl')
-    movies_names = pd.read_pickle('files/movies_names.pkl')
-    movies_pivot = pd.read_pickle('files/movies_pivot.pkl')
-
-    img = 'https://www.vintagemovieposters.co.uk/wp-content/uploads/2023/03/IMG_1887-scaled.jpeg'
-
-    select_movie = st.selectbox('Type or choose movie', movies_names)
-    button = st.button('Search')
-
-    if button:
-        suggestion = cf_suggestions(select_movie, movies_pivot)
-        movies, genres = cf_recommendations(suggestion, movies_pivot, movies_df)
-        cf_style(movies, genres)
-
-else:
+if colab_sys == 'Content Based Recommendation System':
     cb_movies = pd.read_csv('files/cb_movies.csv')
     cosine_sim = pd.read_csv('files/cosine_sim.csv')
-
-    img = 'https://www.vintagemovieposters.co.uk/wp-content/uploads/2023/03/IMG_1887-scaled.jpeg'
 
     select_movie = st.selectbox('Type or choose movie', cb_movies['title'])
     button = st.button('Search')
@@ -165,4 +159,18 @@ else:
         scores = get_scores(select_movie, cb_movies, cosine_sim)
         budget, genres, homepage, overview, production_companies, production_countries, release_date, runtime, spoken_languages, titles, vote_average, cast, titles_id = get_recommendations(cb_movies, scores)
         cb_style(budget, genres, homepage, overview, production_companies, production_countries, release_date, runtime, spoken_languages, titles, vote_average, cast, titles_id)
-    
+
+else:
+    user_similarity = pd.read_pickle('files/user_similarity.pkl')
+    movie_norm = pd.read_csv('files/movie_pivot_normalized.csv')
+    movies_df = pd.read_csv('files/movies.csv')
+
+    picked_userid = st.slider('Pick user id', value=len(user_similarity.columns)-1)
+    button = st.button(f'Show recommendations based on user {picked_userid} preferences')
+
+    if button:
+        sim_users = get_similar_users()
+        sim_user_movies = filter_movies(sim_users)
+        rec_movies, genres = get_recom_movies(sim_user_movies, movies_df)
+        cf_style(rec_movies, genres)
+
