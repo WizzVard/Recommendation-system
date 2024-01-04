@@ -30,10 +30,13 @@ It will seek similarities between two users and give recommendations based on pr
 - `Web app`
 
 ## Project overview
+** Content Based Recommendation System **
 ![](files/overrrview1.png)
 ![](files/overrrview2.png)
 ![](files/overrrview3.png)
 ![](files/overrrview4.png)
+** Collaborative Filtering Recommendation System **
+![](files/overrrview5.png)
 
 ## How to Install and Run the Project
 
