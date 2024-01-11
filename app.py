@@ -124,17 +124,19 @@ def cf_style(rec_movies, genres):
     st.subheader('Recommendations:')
 
     num_rows = 2
-    for i in range(num_rows):
-        cf_columns(i, rec_movies, genres)
+    # for i in range(num_rows):
+        # cf_columns(i, rec_movies, genres)
+    for i in range(10):
+        st.write('Title: ', rec_movies[i]) 
 
 
-def cf_columns(row_num, rec_movies, genres):
-    columns = st.columns(5)
-    for i in range(5):
-        with columns[i]:
-            st.image(img)
-            st.write('Title: ', rec_movies[i+(5*row_num)]) 
-            st.write('Genres: ', genres[i+(5*row_num)])
+# def cf_columns(row_num, rec_movies, genres):
+#     columns = st.columns(5)
+#     for i in range(5):
+#         with columns[i]:
+#             st.image(img)
+#             st.write('Title: ', rec_movies[i+(5*row_num)]) 
+#             st.write('Genres: ', genres[i+(5*row_num)])
 
 
 # MAIN PAGE
