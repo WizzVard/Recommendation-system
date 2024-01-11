@@ -137,7 +137,7 @@ def cf_columns(row_num, rec_movies, genres):
             st.write('Genres: ', genres[i+(5*row_num)])
 
 
-# MAIN PAGE
+# MAIN PAGEE
 st.header('Movie Recommendation System')
 
 img = 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/2048px-No_image_available.svg.png'
