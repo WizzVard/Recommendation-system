@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import sklearn
 import requests
 
 
@@ -90,7 +89,7 @@ def get_similar_users():
     # Remove picked user ID from the candidate list
     user_similarity.drop(index=picked_userid, inplace=True)
 
-    user_sim_thresh = 0.2
+    user_sim_thresh = 0.1
 
     # Get top 10 similar users
     similar_users = user_similarity[user_similarity[picked_userid]>user_sim_thresh][picked_userid].sort_values(ascending=False)[:10]
@@ -105,7 +104,7 @@ def filter_movies(similar_users):
     # Movies that the target user has watched
     picked_userid_watched = movie_norm[movie_norm.index==0].dropna(axis=1, how='all')
 
-    # Remove movies that target user watched
+    # Remove movies that targett user watched
     similar_user_movies.drop(columns=picked_userid_watched.columns, errors='ignore', inplace=True)
 
     return similar_user_movies
