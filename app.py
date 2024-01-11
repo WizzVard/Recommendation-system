@@ -89,7 +89,7 @@ def get_similar_users():
     # Remove picked user ID from the candidate list
     user_similarity.drop(index=picked_userid, inplace=True)
 
-    user_sim_thresh = 0.2
+    user_sim_thresh = 0.1
 
     # Get top 10 similar users
     similar_users = user_similarity[user_similarity[picked_userid]>user_sim_thresh][picked_userid].sort_values(ascending=False)[:10]
@@ -124,19 +124,17 @@ def cf_style(rec_movies, genres):
     st.subheader('Recommendations:')
 
     num_rows = 2
-    # for i in range(num_rows):
-        # cf_columns(i, rec_movies, genres)
-    for i in range(10):
-        st.write('Title: ', rec_movies[i]) 
+    for i in range(num_rows):
+        cf_columns(i, rec_movies, genres)
 
 
-# def cf_columns(row_num, rec_movies, genres):
-#     columns = st.columns(5)
-#     for i in range(5):
-#         with columns[i]:
-#             st.image(img)
-#             st.write('Title: ', rec_movies[i+(5*row_num)]) 
-#             st.write('Genres: ', genres[i+(5*row_num)])
+def cf_columns(row_num, rec_movies, genres):
+    columns = st.columns(5)
+    for i in range(5):
+        with columns[i]:
+            st.image(img)
+            st.write('Title: ', rec_movies[i+(5*row_num)]) 
+            st.write('Genres: ', genres[i+(5*row_num)])
 
 
 # MAIN PAGE
